@@ -110,7 +110,7 @@ export default function CreateAgent() {
       const response = await fetch('https://api.elevenlabs.io/v1/convai/agents/create', {
         method: 'POST',
         headers: {
-          'xi-api-key': 'org_79413f4f5b5e71825509bba5bc42653e21f7a807d4ceddcac8abeaec9e57147657b54d539eb4e7e9668a69',
+          'xi-api-key': 'sk_bd34b0c355a0c1e857c5bfe25cd08677b23c9bb1c78fa77c',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(agentPayload)
