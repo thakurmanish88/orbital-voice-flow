@@ -75,9 +75,12 @@ const Homepage = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold bg-gradient-brand bg-clip-text text-transparent">
+              <button 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="text-2xl font-bold bg-gradient-brand bg-clip-text text-transparent hover:opacity-80 transition-opacity"
+              >
                 OrbitalConnect AI
-              </h1>
+              </button>
             </div>
             
             <nav className="hidden md:flex items-center space-x-8">
@@ -123,7 +126,7 @@ const Homepage = () => {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="container mx-auto max-w-6xl text-center">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            Your Business Conversations,{" "}
+            Your Business Conversations{" "}
             <span className="bg-gradient-brand bg-clip-text text-transparent">
               Powered by AI from Orbit
             </span>
@@ -131,7 +134,7 @@ const Homepage = () => {
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
             Create Voice Agents in minutes to book appointments, qualify leads, manage renewals and support customers.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex justify-center">
             <Dialog>
               <DialogTrigger asChild>
                 <Button size="lg" className="bg-primary hover:bg-primary-hover text-lg px-8 py-4">
@@ -147,9 +150,6 @@ const Homepage = () => {
                 onBookDemo={handleDemoBooking}
               />
             </Dialog>
-            <Button size="lg" variant="outline" onClick={() => navigate("/login")} className="text-lg px-8 py-4">
-              Sign In
-            </Button>
           </div>
           
           {/* Hero Visual */}
@@ -246,12 +246,27 @@ const Homepage = () => {
             Integrate with your existing workflow and maximize productivity with our comprehensive integration ecosystem.
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center mb-12">
-            {integrationLogos.map((logo, index) => (
-              <div key={index} className="flex items-center justify-center p-4 bg-card border rounded-lg hover:shadow-medium transition-shadow">
-                <span className="text-lg font-semibold text-muted-foreground">{logo}</span>
-              </div>
-            ))}
+          {/* Scrolling Brand Logos */}
+          <div className="overflow-hidden mb-12">
+            <div className="flex animate-scroll">
+              {[...integrationLogos, ...integrationLogos].map((logo, index) => (
+                <div key={index} className="flex items-center justify-center min-w-[200px] mx-8">
+                  <img 
+                    src={`https://logo.clearbit.com/${logo.domain}`} 
+                    alt={logo.name}
+                    className="h-12 w-auto grayscale hover:grayscale-0 transition-all duration-300"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `<span class="text-lg font-semibold text-muted-foreground">${logo.name}</span>`;
+                      }
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           <Dialog>
@@ -528,20 +543,7 @@ const Homepage = () => {
           <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-muted-foreground">© 2025 OrbitalConnect AI. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="bg-primary hover:bg-primary-hover">
-                    Book a Demo
-                  </Button>
-                </DialogTrigger>
-                <BookDemoModal 
-                  selectedDate={selectedDate}
-                  setSelectedDate={setSelectedDate}
-                  demoForm={demoForm}
-                  setDemoForm={setDemoForm}
-                  onBookDemo={handleDemoBooking}
-                />
-              </Dialog>
+              <span className="text-muted-foreground">Follow us on social media</span>
             </div>
           </div>
         </div>
@@ -569,44 +571,57 @@ const SolutionCard = ({ icon, title, problems }: { icon: React.ReactNode; title:
   </Card>
 );
 
-const PricingCard = ({ name, price, period, features, popular }: { 
-  name: string; 
-  price: string; 
-  period: string; 
-  features: string[]; 
+const PricingCard = ({ name, price, period, features, popular = false }: {
+  name: string;
+  price: string;
+  period: string;
+  features: string[];
   popular?: boolean;
-}) => (
-  <Card className={cn("relative", popular && "border-primary shadow-large")}>
-    {popular && (
-      <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary">
-        Most Popular
-      </Badge>
-    )}
-    <CardHeader className="text-center">
-      <CardTitle className="text-2xl">{name}</CardTitle>
-      <div className="text-4xl font-bold">
-        {price}<span className="text-lg text-muted-foreground">{period}</span>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <ul className="space-y-3 mb-6">
-        {features.map((feature, index) => (
-          <li key={index} className="flex items-center">
-            <Check className="h-4 w-4 text-primary mr-2" />
-            {feature}
-          </li>
-        ))}
-      </ul>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="w-full" variant={popular ? "default" : "outline"}>
-            Book a Demo
-          </Button>
-        </DialogTrigger>
-      </Dialog>
-    </CardContent>
-  </Card>
-);
+}) => {
+  const navigate = useNavigate();
+  
+  const handleSubscribe = () => {
+    // Check if user is authenticated (this is a placeholder - implement actual auth check)
+    const isAuthenticated = false; // Replace with actual auth state
+    
+    if (!isAuthenticated) {
+      navigate("/login");
+    } else {
+      // Handle subscription logic here
+      console.log(`Subscribing to ${name} plan`);
+    }
+  };
+
+  return (
+    <Card className={cn("relative", popular && "border-primary shadow-large")}>
+      {popular && (
+        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
+          Most Popular
+        </Badge>
+      )}
+      <CardHeader>
+        <CardTitle className="text-2xl">{name}</CardTitle>
+        <div className="flex items-baseline">
+          <span className="text-4xl font-bold">{price}</span>
+          <span className="text-muted-foreground ml-1">{period}</span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-3 mb-8">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-center">
+              <Check className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+        <Button onClick={handleSubscribe} className="w-full bg-primary hover:bg-primary-hover">
+          Subscribe
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
 
 const BookDemoModal = ({ selectedDate, setSelectedDate, demoForm, setDemoForm, onBookDemo }: any) => (
   <DialogContent className="max-w-2xl">
@@ -686,7 +701,18 @@ const BookDemoModal = ({ selectedDate, setSelectedDate, demoForm, setDemoForm, o
 );
 
 const integrationLogos = [
-  "Google Calendar", "HubSpot", "Salesforce", "Make.com", "Stripe", "Zapier"
+  { name: "Google Calendar", domain: "calendar.google.com" },
+  { name: "HubSpot", domain: "hubspot.com" }, 
+  { name: "Salesforce", domain: "salesforce.com" },
+  { name: "Make.com", domain: "make.com" },
+  { name: "Stripe", domain: "stripe.com" },
+  { name: "Zapier", domain: "zapier.com" },
+  { name: "Slack", domain: "slack.com" },
+  { name: "Microsoft Teams", domain: "teams.microsoft.com" },
+  { name: "Zoom", domain: "zoom.us" },
+  { name: "Calendly", domain: "calendly.com" },
+  { name: "Mailchimp", domain: "mailchimp.com" },
+  { name: "ActiveCampaign", domain: "activecampaign.com" }
 ];
 
 const faqs = [
