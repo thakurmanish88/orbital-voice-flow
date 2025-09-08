@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,13 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+
+// Cal.com types
+declare global {
+  interface Window {
+    Cal?: any;
+  }
+}
 
 const Homepage = () => {
   const navigate = useNavigate();
@@ -102,18 +109,55 @@ const Homepage = () => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Initialize Cal.com when component mounts
+  useEffect(() => {
+    // Cal.com inline embed script
+    const calScript = `
+      (function (C, A, L) { 
+        let p = function (a, ar) { a.q.push(ar); }; 
+        let d = C.document; 
+        C.Cal = C.Cal || function () { 
+          let cal = C.Cal; 
+          let ar = arguments; 
+          if (!cal.loaded) { 
+            cal.ns = {}; 
+            cal.q = cal.q || []; 
+            d.head.appendChild(d.createElement("script")).src = A; 
+            cal.loaded = true; 
+          } 
+          if (ar[0] === L) { 
+            const api = function () { p(api, arguments); }; 
+            const namespace = ar[1]; 
+            api.q = api.q || []; 
+            if(typeof namespace === "string"){
+              cal.ns[namespace] = cal.ns[namespace] || api;
+              p(cal.ns[namespace], ar);
+              p(cal, ["initNamespace", namespace]);
+            } else p(cal, ar); 
+            return;
+          } 
+          p(cal, ar); 
+        }; 
+      })(window, "https://app.cal.com/embed/embed.js", "init");
+      
+      Cal("init", "orbital-flows/30min", {origin:"https://cal.com"});
+      Cal.ns["orbital-flows/30min"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
+    `;
+
+    // Execute the script
+    const scriptElement = document.createElement('script');
+    scriptElement.innerHTML = calScript;
+    document.head.appendChild(scriptElement);
+
+    return () => {
+      if (document.head.contains(scriptElement)) {
+        document.head.removeChild(scriptElement);
+      }
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Cal.com Integration Script */}
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
-            Cal("init", "30min", {origin:"https://app.cal.com"});
-            Cal.ns["30min"]("ui", {"hideEventTypeDetails":false,"layout":"month_view"});
-          `
-        }}
-      />
       {/* Header Navigation */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -182,7 +226,7 @@ const Homepage = () => {
               size="lg" 
               className="bg-primary hover:bg-primary-hover text-lg px-8 py-4"
               data-cal-link="orbital-flows/30min"
-              data-cal-namespace="30min"
+              data-cal-namespace="orbital-flows/30min"
               data-cal-config='{"layout":"month_view"}'
             >
               Book a Demo
@@ -261,7 +305,7 @@ const Homepage = () => {
               size="lg" 
               className="bg-primary hover:bg-primary-hover"
               data-cal-link="orbital-flows/30min"
-              data-cal-namespace="30min"
+              data-cal-namespace="orbital-flows/30min"
               data-cal-config='{"layout":"month_view"}'
             >
               Book a Demo
@@ -308,7 +352,7 @@ const Homepage = () => {
             size="lg" 
             className="bg-primary hover:bg-primary-hover"
             data-cal-link="orbital-flows/30min"
-            data-cal-namespace="30min"
+            data-cal-namespace="orbital-flows/30min"
             data-cal-config='{"layout":"month_view"}'
           >
             Book a Demo
@@ -405,7 +449,7 @@ const Homepage = () => {
               size="lg" 
               className="bg-primary hover:bg-primary-hover"
               data-cal-link="orbital-flows/30min"
-              data-cal-namespace="30min"
+              data-cal-namespace="orbital-flows/30min"
               data-cal-config='{"layout":"month_view"}'
             >
               Book a Demo
