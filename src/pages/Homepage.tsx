@@ -538,12 +538,42 @@ const Homepage = () => {
                 <div className="space-y-4">
                   <div className="flex items-center">
                     <Mail className="h-5 w-5 text-primary mr-3" />
-                    <span>support@orbitalconnect.ai</span>
+                    <span>support@orbitalflows.com</span>
                   </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-5 w-5 text-primary mr-3" />
-                    <span>San Francisco, CA</span>
-                  </div>
+                </div>
+              </div>
+
+              {/* Global Locations */}
+              <div>
+                <h3 className="text-2xl font-bold mb-4">Our Global Presence</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <Card className="p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center">
+                      <MapPin className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <div className="font-semibold">Delhi</div>
+                        <div className="text-sm text-muted-foreground">India Headquarters</div>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center">
+                      <MapPin className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <div className="font-semibold">San Francisco</div>
+                        <div className="text-sm text-muted-foreground">US Operations</div>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center">
+                      <MapPin className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <div className="font-semibold">Dubai</div>
+                        <div className="text-sm text-muted-foreground">Middle East Hub</div>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
               </div>
 
@@ -612,9 +642,6 @@ const Homepage = () => {
           
           <div className="border-t mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-muted-foreground">© 2025 Orbital Flows. All rights reserved.</p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <span className="text-muted-foreground">Follow us on social media</span>
-            </div>
           </div>
         </div>
       </footer>
