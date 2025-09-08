@@ -749,8 +749,8 @@ const faqs = [
     answer: "Setting up your first campaign is simple. Just use our intuitive campaign builder, define your goals, upload your contact list, and launch. Our platform guides you through each step."
   },
   {
-    question: "Do I need technical skills to use OrbitalConnect AI?",
-    answer: "Not at all! OrbitalConnect AI is designed for business users with no technical background. Our drag-and-drop interface and pre-built templates make it easy to get started."
+    question: "Do I need technical skills to use Orbital Flows?",
+    answer: "Not at all! Orbital Flows is designed for business users with no technical background. Our drag-and-drop interface and pre-built templates make it easy to get started."
   },
   {
     question: "Which integrations are supported?",
