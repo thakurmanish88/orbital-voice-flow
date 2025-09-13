@@ -102,12 +102,10 @@ export function DashboardFilters({
                     />
                     <span className="text-sm font-medium">All Campaigns</span>
                   </div>
-                  {campaigns.map((campaign) => (
+                  {filteredCampaigns.map((campaign) => (
                     <div
                       key={campaign.id}
-                      className={`flex items-center space-x-2 p-2 hover:bg-muted/50 rounded cursor-pointer ${
-                        campaignSearchQuery === '' || filteredCampaigns.includes(campaign) ? '' : 'hidden'
-                      }`}
+                      className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded cursor-pointer"
                       onClick={() => handleCampaignToggle(campaign.id)}
                     >
                       <Checkbox 
