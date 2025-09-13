@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -9,14 +9,18 @@ import { DashboardMetrics } from "@/components/dashboard/DashboardMetrics";
 import { CampaignsList } from "@/components/dashboard/CampaignsList";
 import { CampaignDetails } from "@/components/dashboard/CampaignDetails";
 import { DateRange } from "react-day-picker";
+import { subDays } from "date-fns";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const { metrics, campaigns, conversations, isLoading, fetchDashboardData, fetchCampaignDetails } = useDashboardData();
   
-  const [selectedCampaign, setSelectedCampaign] = useState('all');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>(['all']);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
   const [selectedCampaignDetails, setSelectedCampaignDetails] = useState<string | null>(null);
   const [campaignDetailsData, setCampaignDetailsData] = useState<any[]>([]);
 
@@ -27,21 +31,36 @@ export default function Dashboard() {
     return 'User';
   };
 
-  const handleCampaignChange = (campaignId: string) => {
-    setSelectedCampaign(campaignId);
-    fetchDashboardData(campaignId === 'all' ? undefined : campaignId, dateRange);
+  const handleCampaignChange = (campaignIds: string[]) => {
+    setSelectedCampaigns(campaignIds);
+    const campaignsToFilter = campaignIds.includes('all') ? undefined : campaignIds;
+    fetchDashboardData(campaignsToFilter, dateRange);
   };
 
   const handleDateRangeChange = (newDateRange: DateRange | undefined) => {
     setDateRange(newDateRange);
-    fetchDashboardData(selectedCampaign === 'all' ? undefined : selectedCampaign, newDateRange);
+    const campaignsToFilter = selectedCampaigns.includes('all') ? undefined : selectedCampaigns;
+    fetchDashboardData(campaignsToFilter, newDateRange);
   };
 
   const handleClearFilters = () => {
-    setSelectedCampaign('all');
-    setDateRange(undefined);
-    fetchDashboardData();
+    setSelectedCampaigns(['all']);
+    const defaultDateRange = {
+      from: subDays(new Date(), 7),
+      to: new Date(),
+    };
+    setDateRange(defaultDateRange);
+    fetchDashboardData(undefined, defaultDateRange);
   };
+
+  // Initialize with default filters on mount
+  useEffect(() => {
+    const defaultDateRange = {
+      from: subDays(new Date(), 7),
+      to: new Date(),
+    };
+    fetchDashboardData(undefined, defaultDateRange);
+  }, []);
 
   const handleViewDetails = async (campaignId: string) => {
     const details = await fetchCampaignDetails(campaignId);
@@ -102,7 +121,7 @@ export default function Dashboard() {
       {/* Dashboard Filters */}
       <DashboardFilters
         campaigns={campaigns.map(c => ({ id: c.id, name: c.name }))}
-        selectedCampaign={selectedCampaign}
+        selectedCampaigns={selectedCampaigns}
         dateRange={dateRange}
         onCampaignChange={handleCampaignChange}
         onDateRangeChange={handleDateRangeChange}

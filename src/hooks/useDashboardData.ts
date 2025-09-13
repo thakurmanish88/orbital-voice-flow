@@ -50,7 +50,7 @@ export function useDashboardData() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchDashboardData = async (selectedCampaign?: string, dateRange?: DateRange) => {
+  const fetchDashboardData = async (selectedCampaigns?: string[], dateRange?: DateRange) => {
     try {
       setIsLoading(true);
 
@@ -59,8 +59,8 @@ export function useDashboardData() {
         .from('conversations')
         .select('*');
 
-      if (selectedCampaign && selectedCampaign !== 'all') {
-        conversationsQuery = conversationsQuery.eq('campaign_id', selectedCampaign);
+      if (selectedCampaigns && selectedCampaigns.length > 0 && !selectedCampaigns.includes('all')) {
+        conversationsQuery = conversationsQuery.in('campaign_id', selectedCampaigns);
       }
 
       if (dateRange?.from && dateRange?.to) {
