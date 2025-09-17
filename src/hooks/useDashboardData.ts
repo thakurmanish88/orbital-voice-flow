@@ -58,7 +58,7 @@ export function useDashboardData() {
   const [conversations, setConversations] = useState<ConversationDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { profile } = useProfile();
+  const { profile, loading: profileLoading } = useProfile();
 
   const fetchDashboardData = async (selectedCampaigns?: string[]) => {
     try {
@@ -127,7 +127,8 @@ export function useDashboardData() {
       }, 0) || 0;
       
       // Calculate total cost based on user's currency and call rate from profile
-      const callRate = profile?.call_rate || 0;
+      // Default call rate to a reasonable value if not set in profile
+      const callRate = profile?.call_rate ?? 2.0; // Default to 2.0 per minute if not set (reasonable for voice calls)
       const totalCost = totalMinutes * callRate;
 
       setMetrics({
@@ -151,7 +152,8 @@ export function useDashboardData() {
         }, 0);
         
         // Calculate total cost based on user's currency and call rate from profile
-        const callRate = profile?.call_rate || 0;
+        // Default call rate to a reasonable value if not set in profile
+        const callRate = profile?.call_rate ?? 2.0; // Default to 2.0 per minute if not set (reasonable for voice calls)
         const campaignCost = campaignMinutes * callRate;
 
         return {
@@ -234,8 +236,11 @@ export function useDashboardData() {
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    // Only fetch data after profile has finished loading
+    if (!profileLoading) {
+      fetchDashboardData();
+    }
+  }, [profileLoading, profile?.call_rate]);
 
   const fetchTranscript = async (conversationId: string) => {
     try {
