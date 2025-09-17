@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Phone, Clock, User, FileText, Play, MessageSquare, BarChart3, Download, Volume2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Phone, Clock, User, FileText, Play, MessageSquare, BarChart3, Download, Volume2, Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
@@ -54,6 +55,23 @@ export function CampaignDetails({
   const [selectedDataCollection, setSelectedDataCollection] = useState<ConversationDetail | null>(null);
   const [transcriptData, setTranscriptData] = useState<any[]>([]);
   const [loadingTranscript, setLoadingTranscript] = useState(false);
+  const [phoneSearchQuery, setPhoneSearchQuery] = useState<string>("");
+
+  // Filter conversations based on phone number search
+  const filteredConversations = conversations.filter(conversation => {
+    if (!phoneSearchQuery.trim()) return true;
+    
+    // Remove all non-digit characters for comparison
+    const searchDigits = phoneSearchQuery.replace(/\D/g, '');
+    const phoneDigits = (conversation.phone_number || '').replace(/\D/g, '');
+    
+    // Match if the phone number contains the search digits
+    return phoneDigits.includes(searchDigits);
+  });
+
+  const clearSearch = () => {
+    setPhoneSearchQuery("");
+  };
 
   const fetchTranscript = async (conversationId: string) => {
     setLoadingTranscript(true);
@@ -127,7 +145,9 @@ export function CampaignDetails({
 
   const downloadExcel = () => {
     // Prepare data for Excel export including Evaluation & Data Collection
-    const excelData = conversations.map(conversation => {
+    // Use filtered conversations if there's a search query, otherwise use all conversations
+    const dataToExport = phoneSearchQuery ? filteredConversations : conversations;
+    const excelData = dataToExport.map(conversation => {
       // Extract evaluation results
       const evaluationResults = conversation.analysis?.evaluation_criteria_results ?
         Object.entries(conversation.analysis.evaluation_criteria_results)
@@ -162,7 +182,10 @@ export function CampaignDetails({
     XLSX.utils.book_append_sheet(wb, ws, 'Call Details');
 
     // Download the file
-    XLSX.writeFile(wb, `${campaignName}_call_details.xlsx`);
+    const fileName = phoneSearchQuery 
+      ? `${campaignName}_call_details_search_${phoneSearchQuery.replace(/\D/g, '')}.xlsx`
+      : `${campaignName}_call_details.xlsx`;
+    XLSX.writeFile(wb, fileName);
   };
 
   const downloadCallRecording = async (conversationId: string) => {
@@ -295,18 +318,42 @@ export function CampaignDetails({
                 Call Details
               </CardTitle>
               <p className="text-muted-foreground mt-1">
-                {conversations.length} total calls
+                {phoneSearchQuery ? `${filteredConversations.length} matching calls` : `${conversations.length} total calls`}
               </p>
             </div>
             <Button
               variant="outline"
               onClick={downloadExcel}
               className="gap-2"
-              disabled={conversations.length === 0}
+              disabled={filteredConversations.length === 0}
             >
               <Download className="h-4 w-4" />
               Download Excel
             </Button>
+          </div>
+          
+          {/* Phone Number Search */}
+          <div className="mt-4">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by phone number..."
+                value={phoneSearchQuery}
+                onChange={(e) => setPhoneSearchQuery(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {phoneSearchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSearch}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -328,7 +375,7 @@ export function CampaignDetails({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {conversations.map((conversation) => (
+                {filteredConversations.length > 0 ? filteredConversations.map((conversation) => (
                   <TableRow key={conversation.id}>
                     <TableCell className="font-medium">
                       {conversation.phone_number || 'N/A'}
@@ -431,7 +478,24 @@ export function CampaignDetails({
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={11} className="text-center py-8">
+                      <div className="flex flex-col items-center gap-2">
+                        <Phone className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-muted-foreground">
+                          {phoneSearchQuery ? 'No calls found matching your search' : 'No calls found'}
+                        </p>
+                        {phoneSearchQuery && (
+                          <Button variant="outline" size="sm" onClick={clearSearch} className="gap-2">
+                            <X className="h-4 w-4" />
+                            Clear search
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
