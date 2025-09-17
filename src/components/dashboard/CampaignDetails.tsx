@@ -457,10 +457,9 @@ export function CampaignDetails({
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedDataCollection(conversation)}
-                        className="gap-1"
+                        title="View data collection"
                       >
                         <FileText className="h-4 w-4" />
-                        View
                       </Button>
                     </TableCell>
                     <TableCell>
@@ -471,10 +470,9 @@ export function CampaignDetails({
                           setSelectedTranscript(conversation);
                           fetchTranscript(conversation.conversation_id);
                         }}
-                        className="gap-1"
+                        title="View transcript"
                       >
                         <MessageSquare className="h-4 w-4" />
-                        View
                       </Button>
                     </TableCell>
                   </TableRow>
