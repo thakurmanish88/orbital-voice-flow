@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Phone, Clock, User, FileText, Play, MessageSquare, BarChart3, Download } from "lucide-react";
+import { ArrowLeft, Phone, Clock, User, FileText, Play, MessageSquare, BarChart3, Download, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { format } from "date-fns";
 import * as XLSX from 'xlsx';
+import { useToast } from "@/hooks/use-toast";
 
 interface ConversationDetail {
   id: string;
@@ -29,6 +30,7 @@ interface ConversationDetail {
   has_audio: boolean;
   additional_fields?: any;
   conversation_id: string;
+  dynamic_variables?: any;
 }
 
 interface CampaignDetailsProps {
@@ -39,13 +41,14 @@ interface CampaignDetailsProps {
   isLoading?: boolean;
 }
 
-export function CampaignDetails({ 
-  campaignId, 
-  campaignName, 
-  conversations, 
-  onBack, 
-  isLoading 
+export function CampaignDetails({
+  campaignId,
+  campaignName,
+  conversations,
+  onBack,
+  isLoading
 }: CampaignDetailsProps) {
+  const { toast } = useToast();
   const [selectedTranscript, setSelectedTranscript] = useState<ConversationDetail | null>(null);
   const [selectedEvaluation, setSelectedEvaluation] = useState<ConversationDetail | null>(null);
   const [selectedDataCollection, setSelectedDataCollection] = useState<ConversationDetail | null>(null);
@@ -117,23 +120,39 @@ export function CampaignDetails({
       'busy': { variant: 'destructive', label: 'Busy' },
       'voicemail': { variant: 'secondary', label: 'Voicemail' }
     };
-    
+
     const statusInfo = statusMap[status?.toLowerCase()] || { variant: 'secondary', label: status || 'Unknown' };
     return <Badge variant={statusInfo.variant} className={statusInfo.className}>{statusInfo.label}</Badge>;
   };
 
   const downloadExcel = () => {
-    // Prepare data for Excel export
-    const excelData = conversations.map(conversation => ({
-      'Phone Number': conversation.phone_number || 'N/A',
-      'Name': conversation.metadata?.dynamic_variables?.name || conversation.contact_name || 'Unknown',
-      'Call Status': conversation.call_successful || 'Unknown',
-      'Date': formatDateOnly(conversation.start_time_unix),
-      'Start Time': formatTimeOnly(conversation.start_time_unix),
-      'Duration': formatDuration(conversation.call_duration_secs),
-      'Summary': conversation.conversation_summary || 'No summary available',
-      'Has Audio': conversation.has_audio ? 'Yes' : 'No'
-    }));
+    // Prepare data for Excel export including Evaluation & Data Collection
+    const excelData = conversations.map(conversation => {
+      // Extract evaluation results
+      const evaluationResults = conversation.analysis?.evaluation_criteria_results ?
+        Object.entries(conversation.analysis.evaluation_criteria_results)
+          .map(([key, result]: [string, any]) => `${result.criteria_id}: ${result.result}`)
+          .join('; ') : 'N/A';
+
+      // Extract data collection results
+      const dataCollectionResults = conversation.analysis?.data_collection_results ?
+        Object.entries(conversation.analysis.data_collection_results)
+          .map(([key, result]: [string, any]) => `${result.data_collection_id}: ${result.value || 'No value'}`)
+          .join('; ') : 'N/A';
+
+      return {
+        'Phone Number': conversation.phone_number || 'N/A',
+        'Name': conversation.contact_name || 'Unknown',
+        'Call Status': conversation.call_successful || 'Unknown',
+        'Date': formatDateOnly(conversation.start_time_unix),
+        'Start Time': formatTimeOnly(conversation.start_time_unix),
+        'Duration': formatDuration(conversation.call_duration_secs),
+        'Summary': conversation.conversation_summary || 'No summary available',
+        'Has Audio': conversation.has_audio ? 'Yes' : 'No',
+        'Evaluation Results': evaluationResults,
+        'Data Collection Results': dataCollectionResults
+      };
+    });
 
     // Create workbook and worksheet
     const wb = XLSX.utils.book_new();
@@ -146,10 +165,113 @@ export function CampaignDetails({
     XLSX.writeFile(wb, `${campaignName}_call_details.xlsx`);
   };
 
-  const playCallRecording = async (conversationId: string) => {
-    // This would call the ElevenLabs audio endpoint
-    console.log('Playing audio for conversation:', conversationId);
-    // Implementation would fetch audio from https://api.elevenlabs.io/v1/convai/conversations/:conversation_id/audio
+  const downloadCallRecording = async (conversationId: string) => {
+    try {
+      // Use Supabase client to invoke the edge function with proper authentication
+      const { data, error } = await supabase.functions.invoke('get-conversation-audio', {
+        body: { conversationId }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to fetch audio');
+      }
+
+      // The function returns the audio stream directly, so we need to handle it as blob
+      // Since supabase.functions.invoke doesn't handle binary data well, let's use fetch with auth headers
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch(`https://opmgrupbwdubxxvpsjng.supabase.co/functions/v1/get-conversation-audio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ conversationId })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Get the audio blob
+      const audioBlob = await response.blob();
+      
+      // Create a download link
+      const downloadUrl = URL.createObjectURL(audioBlob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `conversation_${conversationId}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL object
+      URL.revokeObjectURL(downloadUrl);
+
+      toast({
+        title: "Audio Downloaded",
+        description: "Call recording has been downloaded successfully.",
+      });
+
+    } catch (error: any) {
+      console.error('Error downloading audio:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download call recording. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const playAudio = async (conversationId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch(`https://opmgrupbwdubxxvpsjng.supabase.co/functions/v1/get-conversation-audio`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ conversationId })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      audio.play().catch(console.error);
+      
+      // Clean up when audio ends
+      audio.addEventListener('ended', () => {
+        URL.revokeObjectURL(audioUrl);
+      });
+
+      toast({
+        title: "Playing Audio",
+        description: "Call recording is now playing.",
+      });
+
+    } catch (error: any) {
+      console.error('Error playing audio:', error);
+      toast({
+        title: "Playback Failed",
+        description: "Failed to play call recording. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -193,16 +315,16 @@ export function CampaignDetails({
               <TableHeader>
                 <TableRow>
                   <TableHead>Phone Number</TableHead>
-                  <TableHead>Name</TableHead>
+                  <TableHead>Additional Fields</TableHead>
                   <TableHead>Call Status</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Start Time</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Summary</TableHead>
                   <TableHead>Recording</TableHead>
-                  <TableHead>Transcript</TableHead>
                   <TableHead>Evaluation</TableHead>
                   <TableHead>Data Collection</TableHead>
+                  <TableHead>Transcript</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -212,7 +334,19 @@ export function CampaignDetails({
                       {conversation.phone_number || 'N/A'}
                     </TableCell>
                     <TableCell>
-                      {conversation.metadata?.dynamic_variables?.name || conversation.contact_name || 'Unknown'}
+                      {conversation.dynamic_variables && Object.keys(conversation.dynamic_variables).length > 0 ? (
+                        <div className="max-w-xs space-y-1">
+                          {Object.entries(conversation.dynamic_variables)
+                            .filter(([key]) => !key.startsWith('system__'))
+                            .map(([key, value]) => (
+                              <div key={key} className="text-xs">
+                                <span className="font-medium">{key}:</span> {String(value)}
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        '-'
+                      )}
                     </TableCell>
                     <TableCell>
                       {getCallStatusBadge(conversation.call_successful)}
@@ -235,19 +369,54 @@ export function CampaignDetails({
                       </div>
                     </TableCell>
                     <TableCell>
-                      {conversation.has_audio ? (
+                      <div className="flex gap-1">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => playCallRecording(conversation.id)}
+                          onClick={() => playAudio(conversation.conversation_id)}
                           className="gap-1"
                         >
-                          <Play className="h-4 w-4" />
+                          <Volume2 className="h-4 w-4" />
                           Play
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => downloadCallRecording(conversation.conversation_id)}
+                          className="gap-1"
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {conversation.analysis?.evaluation_criteria_results ? (
+                        <div className="space-y-1">
+                          {Object.entries(conversation.analysis.evaluation_criteria_results).map(([key, result]: [string, any]) => (
+                            <Badge
+                              key={key}
+                              variant={result.result === 'success' ? 'default' : 'destructive'}
+                              className={result.result === 'success' ? 'bg-success text-success-foreground' : ''}
+                            >
+                              {result.result}
+                            </Badge>
+                          ))}
+                        </div>
                       ) : (
-                        <span className="text-muted-foreground text-sm">No audio</span>
+                        <span className="text-muted-foreground text-sm">No evaluation</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedDataCollection(conversation)}
+                        className="gap-1"
+                      >
+                        <FileText className="h-4 w-4" />
+                        View
+                      </Button>
                     </TableCell>
                     <TableCell>
                       <Button
@@ -260,28 +429,6 @@ export function CampaignDetails({
                         className="gap-1"
                       >
                         <MessageSquare className="h-4 w-4" />
-                        View
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedEvaluation(conversation)}
-                        className="gap-1"
-                      >
-                        <BarChart3 className="h-4 w-4" />
-                        View
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedDataCollection(conversation)}
-                        className="gap-1"
-                      >
-                        <FileText className="h-4 w-4" />
                         View
                       </Button>
                     </TableCell>
