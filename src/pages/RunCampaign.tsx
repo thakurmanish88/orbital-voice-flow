@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ContactsModal } from "@/components/contacts/ContactsModal";
 import { ExistingContactsModal } from "@/components/contacts/ExistingContactsModal";
 import { CsvUploader } from "@/components/contacts/CsvUploader";
-import { ChevronLeft, ChevronRight, Upload, Play, CalendarIcon, Clock, Users, Plus, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Upload, Play, CalendarIcon, Clock, Users, Plus, Phone, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +69,7 @@ export default function RunCampaign() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [isSelectingExisting, setIsSelectingExisting] = useState(false);
+  const [showCsvUploader, setShowCsvUploader] = useState(false);
 
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -456,20 +457,50 @@ export default function RunCampaign() {
                   </div>
                 </Card>
                 
-                <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/50">
+                <Card className="p-6 hover:shadow-md transition-shadow border-2 hover:border-primary/50">
                   <div className="text-center space-y-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                       <Upload className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Upload CSV</h4>
-                      <p className="text-sm text-muted-foreground">Import contacts from a file</p>
+                      <p className="text-sm text-muted-foreground mb-4">Import contacts from a file</p>
                     </div>
-                    <div className="pt-2">
-                      <CsvUploader 
-                        onContactsUploaded={handleCsvUpload}
-                        campaignId={savedCampaignId || undefined}
+                    <div className="space-y-3">
+                      <input
+                        type="file"
+                        accept=".csv,.xlsx,.xls"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            // Simple file handling - you can expand this
+                            console.log('File selected:', file.name);
+                          }
+                        }}
+                        className="hidden"
+                        id="csv-upload"
                       />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowCsvUploader(true)}
+                        className="w-full"
+                      >
+                        Choose File
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = 'data:text/csv;charset=utf-8,Phone,Name,Email\n919999958112,John Doe,john@example.com';
+                          link.download = 'contacts_template.csv';
+                          link.click();
+                        }}
+                        className="w-full text-xs"
+                      >
+                        Download Template
+                      </Button>
                     </div>
                   </div>
                 </Card>
@@ -697,6 +728,29 @@ export default function RunCampaign() {
         onClose={() => setIsExistingContactsModalOpen(false)}
         onSave={handleManualContacts}
       />
+
+      {/* CSV Uploader Modal */}
+      {showCsvUploader && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Upload CSV File</h2>
+                <Button variant="ghost" onClick={() => setShowCsvUploader(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <CsvUploader 
+                onContactsUploaded={(contacts) => {
+                  handleCsvUpload(contacts);
+                  setShowCsvUploader(false);
+                }}
+                campaignId={savedCampaignId || undefined}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
         <AlertDialogContent>
