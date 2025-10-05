@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ContactsModal } from "@/components/contacts/ContactsModal";
+import { CsvUploader } from "@/components/contacts/CsvUploader";
 import { ChevronLeft, ChevronRight, Upload, Play, CalendarIcon, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -203,60 +204,8 @@ export default function RunCampaign() {
     navigate('/dashboard');
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-
-    const text = await file.text();
-    const lines = text.split('\n');
-    const headers = lines[0].split(',').map(h => h.trim());
-    
-    const parsedContacts: Contact[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      if (values.length >= 0 && values[0]) {
-        const contact: Contact = {
-          id: `csv-${i}`,
-          phone: values[0],
-        };
-        
-        // Add additional fields
-        for (let j = 2; j < Math.min(headers.length, values.length); j++) {
-          contact[headers[j]] = values[j];
-        }
-        
-        parsedContacts.push(contact);
-      }
-    }
-
-    // Save contacts to database
-    try {
-      const { error } = await supabase
-        .from('contacts')
-        .insert(
-          parsedContacts.map(contact => ({
-            user_id: user.id,
-            phone: contact.phone,
-            additional_fields: Object.fromEntries(
-              Object.entries(contact).filter(([key]) => !['id', 'phone'].includes(key))
-            ),
-          }))
-        );
-
-      if (error) throw error;
-
-      setContacts(parsedContacts);
-      toast({
-        title: "Success",
-        description: `${parsedContacts.length} contacts uploaded successfully`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to save contacts",
-        variant: "destructive",
-      });
-    }
+  const handleCsvUpload = (uploadedContacts: Contact[]) => {
+    setContacts([...contacts, ...uploadedContacts]);
   };
 
   const handleManualContacts = async (newContacts: Contact[]) => {
@@ -487,24 +436,11 @@ export default function RunCampaign() {
           {currentStep === 1 && (
             <div className="space-y-6">
               <h3 className="text-xl font-semibold mb-6">Upload Contact List</h3>
-              <div className="space-y-4">
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <div className="w-full h-32 border-2 border-dashed border-input rounded-lg hover:bg-primary-light hover:border-primary transition-colors flex items-center justify-center">
-                    <div className="text-center">
-                      <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="font-medium">Upload CSV File</p>
-                      <p className="text-sm text-muted-foreground">
-                        Click to browse and select your contact list
-                      </p>
-                    </div>
-                  </div>
-                </label>
+              <div className="space-y-6">
+                <CsvUploader 
+                  onContactsUploaded={handleCsvUpload}
+                  campaignId={savedCampaignId || undefined}
+                />
                 
                 <div className="text-center">
                   <span className="text-muted-foreground">OR</span>
