@@ -621,6 +621,7 @@ export default function RunCampaign() {
           <Button
             variant="outline"
             onClick={prevStep}
+            disabled={isLaunched}
             className="flex items-center gap-2"
           >
             <ChevronLeft className="h-4 w-4" />
