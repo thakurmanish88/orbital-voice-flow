@@ -221,7 +221,7 @@ serve(async (req) => {
              const campaign = recentCampaigns[0];
              userId = campaign.user_id;
              campaignId = campaign.id;
-             console.log('Found campaign via fallback:', { userId, campaignId, phone: phoneNumber });
+             console.log('Found campaign via fallback:', JSON.stringify({ userId: userId, campaignId: campaignId, phone: phoneNumber }));
            }
          }
        }
