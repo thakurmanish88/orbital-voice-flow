@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -68,6 +69,13 @@ export function EditContactForm({ contact, onSave, onCancel }: EditContactFormPr
     }));
   };
 
+  const deleteAdditionalField = (key: string) => {
+    setAdditionalFields(prev => {
+      const { [key]: deleted, ...rest } = prev;
+      return rest;
+    });
+  };
+
   const fieldKeys = Object.keys(additionalFields);
 
   return (
@@ -85,12 +93,22 @@ export function EditContactForm({ contact, onSave, onCancel }: EditContactFormPr
       {fieldKeys.map((key) => (
         <div key={key}>
           <Label htmlFor={key}>{key}</Label>
-          <Input
-            id={key}
-            value={additionalFields[key] || ''}
-            onChange={(e) => updateAdditionalField(key, e.target.value)}
-            placeholder={key}
-          />
+          <div className="flex gap-2">
+            <Input
+              id={key}
+              value={additionalFields[key] || ''}
+              onChange={(e) => updateAdditionalField(key, e.target.value)}
+              placeholder={key}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => deleteAdditionalField(key)}
+              className="px-2"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       ))}
 
