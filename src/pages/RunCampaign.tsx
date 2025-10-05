@@ -218,8 +218,7 @@ export default function RunCampaign() {
       if (values.length >= 2 && values[0] && values[1]) {
         const contact: Contact = {
           id: `csv-${i}`,
-          name: values[0],
-          phone: values[1],
+          phone: values[0],
         };
         
         // Add additional fields
