@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ContactsModal } from "@/components/contacts/ContactsModal";
+import { ExistingContactsModal } from "@/components/contacts/ExistingContactsModal";
 import { CsvUploader } from "@/components/contacts/CsvUploader";
 import { ChevronLeft, ChevronRight, Upload, Play, CalendarIcon, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,11 +62,13 @@ export default function RunCampaign() {
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
   const [startTime, setStartTime] = useState('');
   const [isContactsModalOpen, setIsContactsModalOpen] = useState(false);
+  const [isExistingContactsModalOpen, setIsExistingContactsModalOpen] = useState(false);
   const [isLaunched, setIsLaunched] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [savedCampaignId, setSavedCampaignId] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [isSelectingExisting, setIsSelectingExisting] = useState(false);
 
   const { user } = useAuth();
   const { profile } = useProfile();
@@ -437,6 +440,18 @@ export default function RunCampaign() {
             <div className="space-y-6">
               <h3 className="text-xl font-semibold mb-6">Upload Contact List</h3>
               <div className="space-y-6">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setIsExistingContactsModalOpen(true)}
+                >
+                  Select from Existing Contacts
+                </Button>
+                
+                <div className="text-center">
+                  <span className="text-muted-foreground">OR</span>
+                </div>
+                
                 <CsvUploader 
                   onContactsUploaded={handleCsvUpload}
                   campaignId={savedCampaignId || undefined}
@@ -650,6 +665,12 @@ export default function RunCampaign() {
         onClose={() => setIsContactsModalOpen(false)}
         onSave={handleManualContacts}
         campaignId={savedCampaignId || undefined}
+      />
+
+      <ExistingContactsModal
+        isOpen={isExistingContactsModalOpen}
+        onClose={() => setIsExistingContactsModalOpen(false)}
+        onSave={handleManualContacts}
       />
 
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
