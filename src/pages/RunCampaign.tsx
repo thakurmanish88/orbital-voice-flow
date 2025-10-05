@@ -457,50 +457,14 @@ export default function RunCampaign() {
                   </div>
                 </Card>
                 
-                <Card className="p-6 hover:shadow-md transition-shadow border-2 hover:border-primary/50">
+                <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/50" onClick={() => setShowCsvUploader(true)}>
                   <div className="text-center space-y-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                       <Upload className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                       <h4 className="font-semibold mb-2">Upload CSV</h4>
-                      <p className="text-sm text-muted-foreground mb-4">Import contacts from a file</p>
-                    </div>
-                    <div className="space-y-3">
-                      <input
-                        type="file"
-                        accept=".csv,.xlsx,.xls"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            // Simple file handling - you can expand this
-                            console.log('File selected:', file.name);
-                          }
-                        }}
-                        className="hidden"
-                        id="csv-upload"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowCsvUploader(true)}
-                        className="w-full"
-                      >
-                        Choose File
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = 'data:text/csv;charset=utf-8,Phone,Name,Email\n919999958112,John Doe,john@example.com';
-                          link.download = 'contacts_template.csv';
-                          link.click();
-                        }}
-                        className="w-full text-xs"
-                      >
-                        Download Template
-                      </Button>
+                      <p className="text-sm text-muted-foreground">Import contacts from a file</p>
                     </div>
                   </div>
                 </Card>
