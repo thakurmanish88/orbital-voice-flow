@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ContactsModal } from "@/components/contacts/ContactsModal";
 import { ExistingContactsModal } from "@/components/contacts/ExistingContactsModal";
 import { CsvUploader } from "@/components/contacts/CsvUploader";
-import { ChevronLeft, ChevronRight, Upload, Play, CalendarIcon, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Upload, Play, CalendarIcon, Clock, Users, Plus, Phone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -437,44 +437,69 @@ export default function RunCampaign() {
           )}
 
           {currentStep === 1 && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold mb-6">Upload Contact List</h3>
-              <div className="space-y-6">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setIsExistingContactsModalOpen(true)}
-                >
-                  Select from Existing Contacts
-                </Button>
-                
-                <div className="text-center">
-                  <span className="text-muted-foreground">OR</span>
-                </div>
-                
-                <CsvUploader 
-                  onContactsUploaded={handleCsvUpload}
-                  campaignId={savedCampaignId || undefined}
-                />
-                
-                <div className="text-center">
-                  <span className="text-muted-foreground">OR</span>
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setIsContactsModalOpen(true)}
-                >
-                  Enter Contacts Manually
-                </Button>
-
-                {contacts.length > 0 && (
-                  <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                    <p className="font-medium">{contacts.length} contacts loaded</p>
-                  </div>
-                )}
+            <div className="space-y-8">
+              <div className="text-center">
+                <h3 className="text-2xl font-semibold mb-2">Add Your Contacts</h3>
+                <p className="text-muted-foreground">Choose how you'd like to add contacts to your campaign</p>
               </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/50" onClick={() => setIsExistingContactsModalOpen(true)}>
+                  <div className="text-center space-y-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                      <Users className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Select Existing</h4>
+                      <p className="text-sm text-muted-foreground">Choose from your saved contacts</p>
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/50">
+                  <div className="text-center space-y-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                      <Upload className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Upload CSV</h4>
+                      <p className="text-sm text-muted-foreground">Import contacts from a file</p>
+                    </div>
+                    <div className="pt-2">
+                      <CsvUploader 
+                        onContactsUploaded={handleCsvUpload}
+                        campaignId={savedCampaignId || undefined}
+                      />
+                    </div>
+                  </div>
+                </Card>
+                
+                <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-2 hover:border-primary/50" onClick={() => setIsContactsModalOpen(true)}>
+                  <div className="text-center space-y-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                      <Plus className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">Add Manually</h4>
+                      <p className="text-sm text-muted-foreground">Enter contacts one by one</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {contacts.length > 0 && (
+                <Card className="p-6 bg-success/5 border-success/20">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-success/20 rounded-full flex items-center justify-center">
+                      <Phone className="h-4 w-4 text-success" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-success">{contacts.length} contacts ready</p>
+                      <p className="text-sm text-success/80">Your contacts have been loaded successfully</p>
+                    </div>
+                  </div>
+                </Card>
+              )}
             </div>
           )}
 
